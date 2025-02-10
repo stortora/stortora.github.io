@@ -1,4 +1,5 @@
 .day.in-range {
     background-color: #000000 !important; /* Bright green */
     color: white !important; /* Ensure text contrast */
+    border-radius: 0px
 }
