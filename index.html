@@ -1,42 +1,152 @@
-<!doctype html>
-<html class="no-js" lang="">
+<!DOCTYPE html>
+<html>
 
 <head>
-  <meta charset="utf-8">
-  <title></title>
-  <meta name="description" content="">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Date Picker with Predefined Ranges</title>
+    <script src="https://cdn.jsdelivr.net/npm/@easepick/bundle@1.2.1/dist/index.umd.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
 
-  <link rel="manifest" href="site.webmanifest">
-  <link rel="apple-touch-icon" href="icon.png">
-  <!-- Place favicon.ico in the root directory -->
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
 
-  <link rel="stylesheet" href="css/normalize.css">
-  <link rel="stylesheet" href="css/main.css">
+        #datepicker {
+            display: none;
+        }
 
-  <meta name="theme-color" content="#fafafa">
+        easepick-calendar::part(in-range) {
+            background-color: #28a745 !important;
+            color: white !important;
+        }
+
+    </style>
 </head>
 
 <body>
-  <!--[if IE]>
-    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
-  <![endif]-->
+<div class="container">
+    <input id="datepicker" />
+    <div class="range-info" id="rangeInfo"></div>
+</div>
 
-  <!-- Add your site or application content here -->
-  <p>Hola, mundo.</p>
-  <script src="js/vendor/modernizr-3.8.0.min.js"></script>
-  <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-  <script>window.jQuery || document.write('<script src="js/vendor/jquery-3.4.1.min.js"><\/script>')</script>
-  <script src="js/plugins.js"></script>
-  <script src="js/main.js"></script>
+<script>
+    const availabilities = [
+        { startDate: "2025-02-23", endDate: "2025-03-02", cost: "0 points" },
+        { startDate: "2025-02-17", endDate: "2025-02-23", cost: "2 points" },
+        { startDate: "2025-02-10", endDate: "2025-02-17", cost: "2 points" }
+    ];
 
-  <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID.
-  <script>
-    window.ga = function () { ga.q.push(arguments) }; ga.q = []; ga.l = +new Date;
-    ga('create', 'UA-XXXXX-Y', 'auto'); ga('set','transport','beacon'); ga('send', 'pageview')
-  </script>
-  <script src="https://www.google-analytics.com/analytics.js" async></script>
-  -->
+    function isSameDay(date1, date2) {
+        return date1.getFullYear() === date2.getFullYear() &&
+            date1.getMonth() === date2.getMonth() &&
+            date1.getDate() === date2.getDate();
+    }
+
+    const picker = new easepick.create({
+        element: document.getElementById('datepicker'),
+        inline: true,
+        css: [
+            'css/easepick-base.css',
+            'css/easepick-custom.css'
+        ],
+        plugins: ['LockPlugin'],
+        LockPlugin: {
+            minDate: new Date(),
+            filter(date, picked) {
+                const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                for (const range of availabilities) {
+                    const start = new Date(range.startDate);
+                    const end = new Date(range.endDate);
+                    const normalizedStart = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+                    const normalizedEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+                    if (normalizedDate >= normalizedStart && normalizedDate <= normalizedEnd) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        },
+        setup(picker) {
+            console.log('Picker object:', picker);
+
+            picker.on('select', (e) => {
+                const clickedDate = picker.getDate();
+                console.log('Selected date:', clickedDate);
+
+                const selectedRange = availabilities.find(range => {
+                    const start = new Date(range.startDate);
+                    const end = new Date(range.endDate);
+                    return clickedDate >= start && clickedDate <= end;
+                });
+
+                console.log('Selected range:', selectedRange);
+
+                if (selectedRange) {
+                    const start = new Date(selectedRange.startDate);
+                    const end = new Date(selectedRange.endDate);
+
+                    setTimeout(() => {
+                        const container = document.querySelector('.easepick-wrapper');
+                        const shadowRoot = container.shadowRoot;  // Access the shadow root
+
+                        if (shadowRoot) {
+                            const days = shadowRoot.querySelectorAll('.day');  // Adjust class as needed
+                            console.log('Day elements inside shadow root:', days);
+
+                            days.forEach(day => {
+                                day.classList.remove('in-range', 'range-start', 'range-end');
+
+                                if (!day.dataset.time) {
+                                    console.log('Day element without data-time:', day);
+                                    return;
+                                }
+
+                                const date = new Date(parseInt(day.dataset.time));
+                                console.log('Checking day:', date);
+
+                                if (date >= start && date <= end) {
+                                    console.log('Date in range:', date);
+                                    day.classList.add('in-range');
+                                    //day.style.backgroundColor = 'blue';
+
+                                    if (isSameDay(date, start)) {
+                                        console.log('This is the start of the range:', date);
+                                        day.classList.add('range-start');
+                                    }
+                                    if (isSameDay(date, end)) {
+                                        console.log('This is the end of the range:', date);
+                                        day.classList.add('range-end');
+                                    }
+                                } else {
+                                    console.log('Date out of range:', date);
+                                }
+                            });
+                        } else {
+                            console.log('Shadow root not found');
+                        }
+                    }, 50);
+
+                    document.getElementById('rangeInfo').innerHTML = `
+                            Selected stay: ${selectedRange.startDate} to ${selectedRange.endDate}
+                            <br>
+                            Cost: ${selectedRange.cost}
+                        `;
+                }
+            });
+        }
+    });
+</script>
 </body>
 
 </html>
