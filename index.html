@@ -25,128 +25,120 @@
         #datepicker {
             display: none;
         }
-
-        easepick-calendar::part(in-range) {
-            background-color: #28a745 !important;
-            color: white !important;
-        }
-
     </style>
 </head>
 
 <body>
-<div class="container">
-    <input id="datepicker" />
-    <div class="range-info" id="rangeInfo"></div>
-</div>
+    <div class="container">
+        <input id="datepicker" />
+        <div class="range-info" id="rangeInfo"></div>
+    </div>
 
-<script>
-    const availabilities = [
-        { startDate: "2025-02-23", endDate: "2025-03-02", cost: "0 points" },
-        { startDate: "2025-02-17", endDate: "2025-02-23", cost: "2 points" },
-        { startDate: "2025-02-10", endDate: "2025-02-17", cost: "2 points" }
-    ];
+    <script>
+        const availabilities = [
+            { startDate: "2025-02-23", endDate: "2025-03-02", cost: "0 points" },
+            { startDate: "2025-02-17", endDate: "2025-02-23", cost: "2 points" },
+            { startDate: "2025-02-10", endDate: "2025-02-17", cost: "2 points" }
+        ];
 
-    function isSameDay(date1, date2) {
-        return date1.getFullYear() === date2.getFullYear() &&
-            date1.getMonth() === date2.getMonth() &&
-            date1.getDate() === date2.getDate();
-    }
+        function isSameDay(date1, date2) {
+            return date1.getFullYear() === date2.getFullYear() &&
+                date1.getMonth() === date2.getMonth() &&
+                date1.getDate() === date2.getDate();
+        }
 
-    const picker = new easepick.create({
-        element: document.getElementById('datepicker'),
-        inline: true,
-        css: [
-            'css/easepick-base.css',
-            'css/easepick-custom.css'
-        ],
-        plugins: ['LockPlugin'],
-        LockPlugin: {
-            minDate: new Date(),
-            filter(date, picked) {
-                const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-                for (const range of availabilities) {
-                    const start = new Date(range.startDate);
-                    const end = new Date(range.endDate);
-                    const normalizedStart = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-                    const normalizedEnd = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-                    if (normalizedDate >= normalizedStart && normalizedDate <= normalizedEnd) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-        },
-        setup(picker) {
-            console.log('Picker object:', picker);
-
-            picker.on('select', (e) => {
-                const clickedDate = picker.getDate();
-                console.log('Selected date:', clickedDate);
-
-                const selectedRange = availabilities.find(range => {
-                    const start = new Date(range.startDate);
-                    const end = new Date(range.endDate);
-                    return clickedDate >= start && clickedDate <= end;
-                });
-
-                console.log('Selected range:', selectedRange);
-
-                if (selectedRange) {
-                    const start = new Date(selectedRange.startDate);
-                    const end = new Date(selectedRange.endDate);
-
-                    setTimeout(() => {
-                        const container = document.querySelector('.easepick-wrapper');
-                        const shadowRoot = container.shadowRoot;  // Access the shadow root
-
-                        if (shadowRoot) {
-                            const days = shadowRoot.querySelectorAll('.day');  // Adjust class as needed
-                            console.log('Day elements inside shadow root:', days);
-
-                            days.forEach(day => {
-                                day.classList.remove('in-range', 'range-start', 'range-end');
-
-                                if (!day.dataset.time) {
-                                    console.log('Day element without data-time:', day);
-                                    return;
-                                }
-
-                                const date = new Date(parseInt(day.dataset.time));
-                                console.log('Checking day:', date);
-
-                                if (date >= start && date <= end) {
-                                    console.log('Date in range:', date);
-                                    day.classList.add('in-range');
-                                    //day.style.backgroundColor = 'blue';
-
-                                    if (isSameDay(date, start)) {
-                                        console.log('This is the start of the range:', date);
-                                        day.classList.add('range-start');
-                                    }
-                                    if (isSameDay(date, end)) {
-                                        console.log('This is the end of the range:', date);
-                                        day.classList.add('range-end');
-                                    }
-                                } else {
-                                    console.log('Date out of range:', date);
-                                }
-                            });
-                        } else {
-                            console.log('Shadow root not found');
+        const picker = new easepick.create({
+            element: document.getElementById('datepicker'),
+            inline: true,
+            css: [
+                'css/easepick-base.css',
+                'css/easepick-custom.css'
+            ],
+            plugins: ['LockPlugin'],
+            LockPlugin: {
+                minDate: new Date(),
+                filter(date, picked) {
+                    const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                    for (const range of availabilities) {
+                        const start = new Date(range.startDate);
+                        const end = new Date(range.endDate);
+                        if (normalizedDate >= start && normalizedDate <= end) {
+                            return false;
                         }
-                    }, 50);
+                    }
+                    return true;
+                }
+            },
+            setup(picker) {
+                picker.on('select', (e) => {
+                    const clickedDate = picker.getDate();
+                    const selectedRange = availabilities.find(range => {
+                        const start = new Date(range.startDate);
+                        const end = new Date(range.endDate);
+                        return clickedDate >= start && clickedDate <= end;
+                    });
 
-                    document.getElementById('rangeInfo').innerHTML = `
+                    if (selectedRange) {
+                        const start = new Date(selectedRange.startDate);
+                        const end = new Date(selectedRange.endDate);
+                        highlightRange(start, end, 'in-range');
+
+                        document.getElementById('rangeInfo').innerHTML = `
                             Selected stay: ${selectedRange.startDate} to ${selectedRange.endDate}
                             <br>
                             Cost: ${selectedRange.cost}
                         `;
+                    }
+                });
+
+                setTimeout(() => {
+                    const container = document.querySelector('.easepick-wrapper');
+                    if (container && container.shadowRoot) {
+                        const days = container.shadowRoot.querySelectorAll('.day');
+                        days.forEach(day => {
+                            day.addEventListener('mouseover', (e) => {
+                                if (day.dataset.time) {
+                                    const hoveredDate = new Date(parseInt(day.dataset.time));
+                                    const hoveredRange = availabilities.find(range => {
+                                        const start = new Date(range.startDate);
+                                        const end = new Date(range.endDate);
+                                        return hoveredDate >= start && hoveredDate <= end;
+                                    });
+                                    if (hoveredRange) {
+                                        const start = new Date(hoveredRange.startDate);
+                                        const end = new Date(hoveredRange.endDate);
+                                        highlightRange(start, end, 'hover-range');
+                                    }
+                                }
+                            });
+                            day.addEventListener('mouseout', () => {
+                                highlightRange(new Date(), new Date(), 'hover-range');
+                            });
+                        });
+                    }
+                }, 100);
+            }
+        });
+
+        function highlightRange(start, end, className) {
+            setTimeout(() => {
+                const container = document.querySelector('.easepick-wrapper');
+                if (container && container.shadowRoot) {
+                    const days = container.shadowRoot.querySelectorAll('.day');
+                    days.forEach(day => {
+                        if (!day.dataset.time) return;
+
+                        const date = new Date(parseInt(day.dataset.time));
+                        if (date >= start && date <= end) {
+                            day.classList.add(className);
+                        } else {
+                            day.classList.remove(className);
+                        }
+                    });
                 }
-            });
+            }, 50);
         }
-    });
-</script>
+    </script>
 </body>
 
 </html>
