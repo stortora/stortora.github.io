@@ -70,6 +70,48 @@
                 }
             },
             setup(picker) {
+                function attachHoverEvents() {
+                    setTimeout(() => {
+                        const container = document.querySelector('.easepick-wrapper');
+                        if (container && container.shadowRoot) {
+                            const days = container.shadowRoot.querySelectorAll('.day');
+                            days.forEach(day => {
+                                day.removeEventListener('mouseover', handleMouseOver);
+                                day.removeEventListener('mouseout', handleMouseOut);
+                                day.addEventListener('mouseover', handleMouseOver);
+                                day.addEventListener('mouseout', handleMouseOut);
+                            });
+                        }
+                    }, 100);
+                }
+
+                function handleMouseOver(e) {
+                    const dayElement = e.target.closest('.day');
+                    if (dayElement && dayElement.dataset.time && !dayElement.classList.contains('in-range')) {
+                        const hoveredDate = new Date(parseInt(dayElement.dataset.time));
+                        const hoveredRange = availabilities.find(range => {
+                            const start = new Date(range.startDate);
+                            const end = new Date(range.endDate);
+                            return hoveredDate >= start && hoveredDate <= end;
+                        });
+                        if (hoveredRange) {
+                            const start = new Date(hoveredRange.startDate);
+                            const end = new Date(hoveredRange.endDate);
+                            highlightRange(start, end, 'hover-range');
+                        }
+                    }
+                }
+
+                function handleMouseOut() {
+                    highlightRange(new Date(), new Date(), 'hover-range');
+                }
+
+                document.addEventListener('click', (e) => {
+                    if (!document.querySelector('.container').contains(e.target)) {
+                        attachHoverEvents();
+                    }
+                });
+
                 picker.on('select', (e) => {
                     const clickedDate = picker.getDate();
                     const selectedRange = availabilities.find(range => {
@@ -89,34 +131,10 @@
                             Cost: ${selectedRange.cost}
                         `;
                     }
+                    attachHoverEvents(); // Re-attach hover events after selection
                 });
 
-                setTimeout(() => {
-                    const container = document.querySelector('.easepick-wrapper');
-                    if (container && container.shadowRoot) {
-                        const days = container.shadowRoot.querySelectorAll('.day');
-                        days.forEach(day => {
-                            day.addEventListener('mouseover', (e) => {
-                                if (day.dataset.time) {
-                                    const hoveredDate = new Date(parseInt(day.dataset.time));
-                                    const hoveredRange = availabilities.find(range => {
-                                        const start = new Date(range.startDate);
-                                        const end = new Date(range.endDate);
-                                        return hoveredDate >= start && hoveredDate <= end;
-                                    });
-                                    if (hoveredRange) {
-                                        const start = new Date(hoveredRange.startDate);
-                                        const end = new Date(hoveredRange.endDate);
-                                        highlightRange(start, end, 'hover-range');
-                                    }
-                                }
-                            });
-                            day.addEventListener('mouseout', () => {
-                                highlightRange(new Date(), new Date(), 'hover-range');
-                            });
-                        });
-                    }
-                }, 100);
+                attachHoverEvents(); // Attach hover events initially
             }
         });
 
@@ -127,7 +145,6 @@
                     const days = container.shadowRoot.querySelectorAll('.day');
                     days.forEach(day => {
                         if (!day.dataset.time) return;
-
                         const date = new Date(parseInt(day.dataset.time));
                         if (date >= start && date <= end) {
                             day.classList.add(className);
