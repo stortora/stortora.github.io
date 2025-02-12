@@ -1,5 +1,9 @@
 .day.in-range {
-    background-color: #000000 !important; /* Bright green */
+    background-color: #3cff00 !important; /* Bright green */
     color: white !important; /* Ensure text contrast */
-    border-radius: 0px
+}
+
+.day.hover-range {
+    background-color: #8be9b2 !important; /* Bright green */
+    color: white !important; /* Ensure text contrast */
 }
