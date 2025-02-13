@@ -70,6 +70,24 @@
                 }
             },
             setup(picker) {
+                function highlightRange(start, end, className) {
+                    setTimeout(() => {
+                        const container = document.querySelector('.easepick-wrapper');
+                        if (container && container.shadowRoot) {
+                            const days = container.shadowRoot.querySelectorAll('.day');
+                            days.forEach(day => {
+                                if (!day.dataset.time) return;
+                                const date = new Date(parseInt(day.dataset.time));
+                                if (date >= start && date <= end) {
+                                    day.classList.add(className);
+                                } else {
+                                    day.classList.remove(className);
+                                }
+                            });
+                        }
+                    }, 50);
+                }
+                
                 function attachHoverEvents() {
                     setTimeout(() => {
                         const container = document.querySelector('.easepick-wrapper');
@@ -133,28 +151,49 @@
                     }
                     attachHoverEvents(); // Re-attach hover events after selection
                 });
-
                 attachHoverEvents(); // Attach hover events initially
+                
+                picker.on('view', (evt) => {
+                    const { view, date, target } = evt.detail;
+                    if (view !== 'CalendarDay' || !date) return;
+                    
+                    const matchedRange = availabilities.find(range => {
+                        const start = new Date(range.startDate);
+                        const end = new Date(range.endDate);
+                        return date >= start && date <= end;
+                    });
+                    
+                    if (matchedRange) {
+                        const start = new Date(matchedRange.startDate);
+                        const end = new Date(matchedRange.endDate);
+                        const totalDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                        const middleIndex = Math.floor(totalDays / 2);
+                        const costParts = matchedRange.cost.split(' ');
+                        
+                        let displayText = '&nbsp;'; // Ensure uniform height
+                        let alignmentClass = '';
+                        if (totalDays % 2 === 0) {
+                            if (isSameDay(date, new Date(start.getTime() + (middleIndex - 1) * 86400000))) {
+                                displayText = costParts[0];
+                                alignmentClass = 'right-align';
+                            } else if (isSameDay(date, new Date(start.getTime() + middleIndex * 86400000))) {
+                                displayText = costParts[1] || '';
+                                alignmentClass = 'left-align';
+                            }
+                        } else {
+                            if (isSameDay(date, new Date(start.getTime() + middleIndex * 86400000))) {
+                                displayText = matchedRange.cost;
+                            }
+                        }
+                        
+                        const span = target.querySelector('.points') || document.createElement('span');
+                        span.className = `points ${alignmentClass}`.trim();
+                        span.innerHTML = displayText;
+                        target.append(span);
+                    }
+                });
             }
         });
-
-        function highlightRange(start, end, className) {
-            setTimeout(() => {
-                const container = document.querySelector('.easepick-wrapper');
-                if (container && container.shadowRoot) {
-                    const days = container.shadowRoot.querySelectorAll('.day');
-                    days.forEach(day => {
-                        if (!day.dataset.time) return;
-                        const date = new Date(parseInt(day.dataset.time));
-                        if (date >= start && date <= end) {
-                            day.classList.add(className);
-                        } else {
-                            day.classList.remove(className);
-                        }
-                    });
-                }
-            }, 50);
-        }
     </script>
 </body>
 
