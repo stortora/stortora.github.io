@@ -7,3 +7,16 @@
     background-color: #8be9b2 !important; /* Bright green */
     color: white !important; /* Ensure text contrast */
 }
+
+.points {
+    display: block;
+    width: 100%;
+}
+
+.points.left-align {
+    text-align: left;
+}
+
+.points.right-align {
+    text-align: right;
+}
